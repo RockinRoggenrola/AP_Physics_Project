@@ -191,10 +191,8 @@ while True:
     back_emf = k_back * omega
     current = (V - back_emf) / R
 
-    info.text = (
-        f"Rotor speed: {omega:.2f} rad/s\n"
-        f"Back EMF: {back_emf:.2f} V\n"
-        f"Current: {current:.2f} A"
-    )
+    info.text = "Rotor speed: " + str(round(omega, 2)) + " rad/s\n" + \
+                "Back EMF: " + str(round(back_emf, 2)) + " V\n" + \
+                "Current: " + str(round(current, 2)) + " A"
 
     t += dt
