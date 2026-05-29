@@ -15,11 +15,23 @@ scene.forward = vector(0, 0, -1)
 scene.range = 4
 
 # Stator ring
-stator = ring(pos=vector(0, 0, 0),
-              axis=vector(0, 0, 1),
-              radius=2,
-              thickness=0.07,
-              color=color.gray(0.6))
+stator = shapes.circle(radius=2, thickness=0.1)
+
+# Extrude it slightly so it becomes visible in 3D
+extrusion(path=[vec(0,0,0), vec(0,0,0.1)],
+          shape=stator,
+          color=color.gray(0.5))
+
+for i in range(3):
+    thetaN=5*pi/12+i*pi/3
+    thetaS=thetaN+pi
+    offset = pi/16
+    magnetN = shapes.arc(radius=1.8, thickness=0.4, angle1=thetaN, angle2=thetaN+pi/6)
+    magnetS = shapes.arc(radius=1.8, thickness=0.4, angle1=thetaS, angle2=thetaS+pi/6)
+    extrusion(path=[vec(0, 0, 0,), vec(0, 0, 0.1)], shape=magnetN, color=color.gray(0.5))
+    extrusion(path=[vec(0, 0, 0,), vec(0, 0, 0.1)], shape=magnetS, color=color.gray(0.5))
+    coilN = helix(pos=1.3*vector(cos(thetaN+offset), sin(thetaN+offset), 0), axis=vector(cos(thetaN+pi/12), sin(thetaN+pi/12), 0), radius = 0.5, thickness=0.035, coils=10, length=0.2)
+    coilS = helix(pos=1.3*vector(cos(thetaS+offset), sin(thetaS+offset), 0), axis=vector(cos(thetaS+pi/12), sin(thetaS+pi/12), 0), radius = 0.5, thickness=0.035, coils=10, length=0.2)
 
 # Axle through the motor
 axle = cylinder(pos=vector(0, 0, -0.7),
