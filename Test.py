@@ -41,16 +41,23 @@ for i in range(3):
     coilS = helix(pos=1.3*vector(cos(thetaS+offset), sin(thetaS+offset), 0), axis=vector(cos(thetaS+pi/12), sin(thetaS+pi/12), 0), radius = 0.55, thickness=0.035, coils=N, length=l, color=c)
 
 rmsV = 10
-t = 0
 mu0 = 4*pi*1e-7
+t = 0
 
 ac1 = rmsV*sqrt(2)*sin(t)
 ac2 = rmsV*sqrt(2)*sin(t+2*pi/3)
 ac3 = rmsV*sqrt(2)*sin(t+4*pi/3)
+   
+B1 = mu0*ac1*N/l*vector(cos(pi/2), sin(pi/2), 0)
+B2 = mu0*ac2*N/l*vector(cos(pi/2+2*pi/3), sin(pi/2+2*pi/3), 0)
+B3 = mu0*ac3*N/l*vector(cos(pi/2+4*pi/3), sin(pi/2+4*pi/3), 0)
+B = B1+B2+B3
 
-B1 = mu0*ac1*N/l*vector(0, -1)
-B1 = mu0*ac2*N/l*vector(cos(-pi/6), sin(-pi/6))
-B1 = mu0*ac3*N/l*vector(cos(-5*pi/6), sin(-5*pi/6))
+B1arrow = arrow(pos=vector(0, 0, 0), axis=B1, radius=0.06)
+B2arrow = arrow(pos=vector(0, 0, 0), axis=B2, radius=0.06)
+B3arrow = arrow(pos=vector(0, 0, 0), axis=B3, radius=0.06)
+Barrow = arrow(pos=vector(0, 0, 0), axis=B, radius=0.06, color=color.black)
+
 
 # Axle through the motor
 axle = cylinder(pos=vector(0, 0, -0.7),
@@ -103,6 +110,23 @@ minus_label = label(pos=vector(-3.35, 1.8, 0),
                     box=False,
                     color=color.black)
 
+# Squirrel Cage Rotor
+rotor_length = 1.4
+rotor_radius = 0.9
+num_bars = 6
+
+# 1. Create Rotor Bars
+rotor_bars = []
+for i in range(num_bars):
+    angle = i * ((2 * pi)/ num_bars) +pi/2
+    bar_pos = vector(rotor_radius * cos(angle), rotor_radius * sin(angle), 0)
+    bar = cylinder(pos=bar_pos - vector(0, 0, rotor_length/2), axis=vector(0, 0, rotor_length), radius=0.04, color=color.orange)
+    rotor_bars.append(bar)
+
+# 2. Create End Rings
+end_ring_left = ring(pos=vector(0, 0, -rotor_length/2), axis=vector(0, 0, 1), radius=rotor_radius, thickness=0.06, color=color.orange)
+end_ring_right = ring(pos=vector(0, 0, rotor_length/2), axis=vector(0, 0, 1), radius=rotor_radius, thickness=0.06, color=color.orange)
+
 # Wire from battery to motor
 wire1 = curve(pos=[vector(-2.55, 1.8, 0),
                    vector(-1.7, 1.2, 0),
@@ -137,8 +161,6 @@ omega_drive = 2 * pi * frequency   # Angular speed of rotating magnetic field
 # Initial conditions (Also arbitrary. Change.)
 theta = 0.2
 omega = 0.0
-
-t = 0.0
 dt = 0.002
 
 # Keeps an angle between -pi and pi
@@ -194,7 +216,7 @@ def rk4_step(theta, omega, t, dt):
     return new_theta, new_omega
 
 # Updates the visual rotor bar and coil so they rotate together
-def update_rotor_visuals(theta):
+def update_rotor_visuals(theta, t):
     direction = vector(cos(theta), sin(theta), 0)
 
     rotor_length = 2.4
@@ -204,6 +226,20 @@ def update_rotor_visuals(theta):
     coil_length = 1.3
     coil.pos = -(coil_length / 2) * direction
     coil.axis = coil_length * direction
+   
+    ac1 = rmsV*sqrt(2)*sin(t)
+    ac2 = rmsV*sqrt(2)*sin(t+2*pi/3)
+    ac3 = rmsV*sqrt(2)*sin(t+4*pi/3)
+       
+    B1 = mu0*ac1*N/l*vector(cos(pi/2), sin(pi/2), 0)
+    B2 = mu0*ac2*N/l*vector(cos(pi/2+2*pi/3), sin(pi/2+2*pi/3), 0)
+    B3 = mu0*ac3*N/l*vector(cos(pi/2+4*pi/3), sin(pi/2+4*pi/3), 0)
+    B = B1+B2+B3
+   
+    B1arrow.axis = B1
+    B2arrow.axis = B2
+    B3arrow.axis = B3
+    Barrow.axis = B
 
 # Main animation loop
 while True:
@@ -217,7 +253,7 @@ while True:
     field_arrow_length = 1.8
     field_arrow.axis = field_arrow_length * vector(cos(field_angle), sin(field_angle), 0)
 
-    update_rotor_visuals(theta)
+    update_rotor_visuals(theta, t)
 
     back_emf = k_back * omega
     current = (V - back_emf) / R
