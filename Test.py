@@ -22,16 +22,35 @@ extrusion(path=[vec(0,0,0), vec(0,0,0.1)],
           shape=stator,
           color=color.gray(0.5))
 
+N = 20
+l = 0.2
+
 for i in range(3):
     thetaN=5*pi/12+i*pi/3
     thetaS=thetaN+pi
-    offset = pi/16
-    magnetN = shapes.arc(radius=1.8, thickness=0.4, angle1=thetaN, angle2=thetaN+pi/6)
-    magnetS = shapes.arc(radius=1.8, thickness=0.4, angle1=thetaS, angle2=thetaS+pi/6)
+    offset = pi*0.08
+    c = None
+    if i == 0: c = color.red
+    if i == 1: c = color.blue
+    if i == 2: c = color.green
+    magnetN = shapes.arc(radius=1.8, thickness=0.5, angle1=thetaN, angle2=thetaN+pi/6)
+    magnetS = shapes.arc(radius=1.8, thickness=0.5, angle1=thetaS, angle2=thetaS+pi/6)
     extrusion(path=[vec(0, 0, 0,), vec(0, 0, 0.1)], shape=magnetN, color=color.gray(0.5))
     extrusion(path=[vec(0, 0, 0,), vec(0, 0, 0.1)], shape=magnetS, color=color.gray(0.5))
-    coilN = helix(pos=1.3*vector(cos(thetaN+offset), sin(thetaN+offset), 0), axis=vector(cos(thetaN+pi/12), sin(thetaN+pi/12), 0), radius = 0.5, thickness=0.035, coils=10, length=0.2)
-    coilS = helix(pos=1.3*vector(cos(thetaS+offset), sin(thetaS+offset), 0), axis=vector(cos(thetaS+pi/12), sin(thetaS+pi/12), 0), radius = 0.5, thickness=0.035, coils=10, length=0.2)
+    coilN = helix(pos=1.3*vector(cos(thetaN+offset), sin(thetaN+offset), 0), axis=vector(cos(thetaN+pi/12), sin(thetaN+pi/12), 0), radius = 0.55, thickness=0.035, coils=N, length=l, color=c)
+    coilS = helix(pos=1.3*vector(cos(thetaS+offset), sin(thetaS+offset), 0), axis=vector(cos(thetaS+pi/12), sin(thetaS+pi/12), 0), radius = 0.55, thickness=0.035, coils=N, length=l, color=c)
+
+rmsV = 10
+t = 0
+mu0 = 4*pi*1e-7
+
+ac1 = rmsV*sqrt(2)*sin(t)
+ac2 = rmsV*sqrt(2)*sin(t+2*pi/3)
+ac3 = rmsV*sqrt(2)*sin(t+4*pi/3)
+
+B1 = mu0*ac1*N/l*vector(0, -1)
+B1 = mu0*ac2*N/l*vector(cos(-pi/6), sin(-pi/6))
+B1 = mu0*ac3*N/l*vector(cos(-5*pi/6), sin(-5*pi/6))
 
 # Axle through the motor
 axle = cylinder(pos=vector(0, 0, -0.7),
