@@ -157,6 +157,15 @@ emf_graph = graph(title="Back EMF vs Time",
 
 emf_curve = gcurve(graph=emf_graph, color=color.red)
 
+# Torque vs time graph
+torque_graph = graph(title="Torque vs Time",
+                  xtitle="Time (s)",
+                  ytitle="Torque (Nm)",
+                  width=500,
+                  height=300)
+
+torque_curve = gcurve(graph=torque_graph, color=color.blue)
+
 # Physics parameters (All numbers arbitrary right now. Make them sliders and such.)
 V = 12.0              # Voltage
 R = 3.0               # Resistance
@@ -266,8 +275,10 @@ while True:
 
     back_emf = k_back * omega
     current = (V - back_emf) / R
+    torque = k_t * current * sin(wrap_angle(omega_drive * t - theta))
 
     emf_curve.plot(t, back_emf)
+    torque_curve.plot(t, torque)
 
     info.text = "Rotor speed: " + str(round(omega, 2)) + " rad/s\n" + \
                 "Back EMF: " + str(round(back_emf, 2)) + " V\n" + \
