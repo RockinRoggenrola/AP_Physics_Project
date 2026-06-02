@@ -148,6 +148,15 @@ info = label(pos=vector(0, -2.8, 0),
              box=False,
              color=color.black)
 
+# EMF vs time graph
+emf_graph = graph(title="Back EMF vs Time",
+                  xtitle="Time (s)",
+                  ytitle="Back EMF (V)",
+                  width=500,
+                  height=300)
+
+emf_curve = gcurve(graph=emf_graph, color=color.red)
+
 # Physics parameters (All numbers arbitrary right now. Make them sliders and such.)
 V = 12.0              # Voltage
 R = 3.0               # Resistance
@@ -257,6 +266,8 @@ while True:
 
     back_emf = k_back * omega
     current = (V - back_emf) / R
+
+    emf_curve.plot(t, back_emf)
 
     info.text = "Rotor speed: " + str(round(omega, 2)) + " rad/s\n" + \
                 "Back EMF: " + str(round(back_emf, 2)) + " V\n" + \
