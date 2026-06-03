@@ -12,7 +12,35 @@ scene = canvas(title="Electric Motors",
                background=color.white)
 
 scene.forward = vector(0, 0, -1)
-scene.range = 4
+scene.range = 5
+scene.userzoom = False
+scene.userspin = False
+
+#Buttons
+
+def toggle_zoom_out():
+    scene.range += 1  # Zoom out
+    if scene.range == 7:
+        zoom_button_out.text = "Max Zoom"
+        
+
+def toggle_zoom_in():
+    scene.range -= 1 #Zoom in
+    if scene.range <= 2:
+        scene.range -= 0.01
+    if scene.range == 1:
+        zoom_button_in.text = "Max Zoom"
+
+zoom_button_out = button(  
+    bind = toggle_zoom_out,
+    text='Zoom Out', 
+    color=color.black  
+)
+zoom_button_in = button(  
+    bind = toggle_zoom_in,
+    text='Zoom In', 
+    color=color.black  
+)
 
 # Stator ring
 stator = shapes.circle(radius=2, thickness=0.1)
