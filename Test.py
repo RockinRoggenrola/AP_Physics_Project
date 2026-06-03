@@ -153,7 +153,7 @@ emf_graph = graph(title="Back EMF vs Time",
                   xtitle="Time (s)",
                   ytitle="Back EMF (V)",
                   width=500,
-                  height=300)
+                  height=300, xmin=0, xmax = 10, scroll = True)
 
 emf_curve = gcurve(graph=emf_graph, color=color.red)
 
@@ -162,7 +162,7 @@ torque_graph = graph(title="Torque vs Time",
                   xtitle="Time (s)",
                   ytitle="Torque (Nm)",
                   width=500,
-                  height=300)
+                  height=300, xmin = 0, xmax = 10, scroll = True)
 
 torque_curve = gcurve(graph=torque_graph, color=color.blue)
 
