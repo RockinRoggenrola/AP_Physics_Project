@@ -3,7 +3,7 @@
 # Box for battery / power source
 
 from vpython import *
-from math import sin, cos, pi, atan2
+from math import sin, cos, pi, atan2, sqrt
 
 # Setup
 scene = canvas(title="Electric Motors",
@@ -45,7 +45,7 @@ zoom_button_in = button(
 # Stator ring
 stator = shapes.circle(radius=2, thickness=0.1)
 
-# Extrude it slightly so it becomes visible in 3D
+# Make it 3D
 extrusion(path=[vec(0,0,0), vec(0,0,0.1)],
           shape=stator,
           color=color.gray(0.5))
@@ -69,22 +69,32 @@ for i in range(3):
     coilS = helix(pos=1.3*vector(cos(thetaS+offset), sin(thetaS+offset), 0), axis=vector(cos(thetaS+pi/12), sin(thetaS+pi/12), 0), radius = 0.55, thickness=0.035, coils=N, length=l, color=c)
 
 rmsV = 10
+phase_impedance = 3.0
+rmsI = rmsV / phase_impedance     # magnetic field created by current
 mu0 = 4*pi*1e-7
+frequency = 0.8
+omega_electric = 2 * pi * frequency
+
+poles = 2
+omega_sync = 4 * pi * frequency / poles   # Mechanical synchronous speed for the rotating magnetic field
+
+B_visual_scale = 2000   # Makes the magnetic field arrows visible on screen
 t = 0
 
-ac1 = rmsV*sqrt(2)*sin(t)
-ac2 = rmsV*sqrt(2)*sin(t+2*pi/3)
-ac3 = rmsV*sqrt(2)*sin(t+4*pi/3)
+# Three-phase AC currents are 120 degrees apart
+ac1 = rmsI*sqrt(2)*sin(omega_electric*t)
+ac2 = rmsI*sqrt(2)*sin(omega_electric*t-2*pi/3)
+ac3 = rmsI*sqrt(2)*sin(omega_electric*t-4*pi/3)
    
 B1 = mu0*ac1*N/l*vector(cos(pi/2), sin(pi/2), 0)
 B2 = mu0*ac2*N/l*vector(cos(pi/2+2*pi/3), sin(pi/2+2*pi/3), 0)
 B3 = mu0*ac3*N/l*vector(cos(pi/2+4*pi/3), sin(pi/2+4*pi/3), 0)
 B = B1+B2+B3
 
-B1arrow = arrow(pos=vector(0, 0, 0), axis=B1, radius=0.06)
-B2arrow = arrow(pos=vector(0, 0, 0), axis=B2, radius=0.06)
-B3arrow = arrow(pos=vector(0, 0, 0), axis=B3, radius=0.06)
-Barrow = arrow(pos=vector(0, 0, 0), axis=B, radius=0.06, color=color.black)
+B1arrow = arrow(pos=vector(0, 0, 0), axis=B1*B_visual_scale, radius=0.06, color=color.red)
+B2arrow = arrow(pos=vector(0, 0, 0), axis=B2*B_visual_scale, radius=0.06, color=color.blue)
+B3arrow = arrow(pos=vector(0, 0, 0), axis=B3*B_visual_scale, radius=0.06, color=color.green)
+Barrow = arrow(pos=vector(0, 0, 0), axis=B*B_visual_scale, radius=0.06, color=color.black)
 
 
 # Axle through the motor
@@ -177,9 +187,9 @@ info = label(pos=vector(0, -2.8, 0),
              color=color.black)
 
 # EMF vs time graph
-emf_graph = graph(title="Back EMF vs Time",
+emf_graph = graph(title="Instantaneous Rotor EMF vs Time",
                   xtitle="Time (s)",
-                  ytitle="Back EMF (V)",
+                  ytitle="Rotor EMF (V)",
                   width=500,
                   height=300, xmin=0, xmax = 10, scroll = True)
 
@@ -192,19 +202,21 @@ torque_graph = graph(title="Torque vs Time",
                   width=500,
                   height=300, xmin = 0, xmax = 10, scroll = True)
 
-torque_curve = gcurve(graph=torque_graph, color=color.blue)
+motor_torque_curve = gcurve(graph=torque_graph, color=color.blue)
+net_torque_curve = gcurve(graph=torque_graph, color=color.orange)
 
-# Physics parameters (All numbers arbitrary right now. Make them sliders and such.)
-V = 12.0              # Voltage
-R = 3.0               # Resistance
-k_back = 0.50         # Back EMF constant
-k_t = 0.50            # Torque constant
-J = 0.05              # Moment of inertia
+# Physics parameters
+# These values are subject to change
+# The squirrel cage rotor has induced EMF/current because of slip, not because of a DC battery.
+rotor_R = 0.8              # Rotor resistance
+rotor_X_locked = 1.2       # Rotor reactance when slip is 1
+k_induced = 0.80           # Converts slip speed into induced rotor EMF
+k_t = 0.35                 # Converts rotor current into torque
+J = 0.05                   # Moment of inertia
+load_torque = 0.03         # Small opposing load
+damping = 0.02             # Friction loss
 
-frequency = 0.8       # AC frequency
-omega_drive = 2 * pi * frequency   # Angular speed of rotating magnetic field
-
-# Initial conditions (Also arbitrary. Change.)
+# Initial conditions
 theta = 0.2
 omega = 0.0
 dt = 0.002
@@ -213,19 +225,30 @@ dt = 0.002
 def wrap_angle(angle):
     return atan2(sin(angle), cos(angle))
 
+# Calculates slip, induced EMF, current, motor torque, and net torque for an induction motor
+def motor_values(omega):
+    slip_speed = omega_sync - omega
+    slip = slip_speed / omega_sync
+
+    induced_emf = k_induced * slip_speed
+
+    rotor_reactance = rotor_X_locked * abs(slip)
+    rotor_impedance = sqrt(rotor_R**2 + rotor_reactance**2)
+
+    current = induced_emf / rotor_impedance
+
+    motor_torque = k_t * current
+
+    load_direction = 1 if omega >= 0 else -1
+    net_torque = motor_torque - damping * omega - load_torque * load_direction
+
+    return slip, induced_emf, current, motor_torque, net_torque
+
 # Calculates the rotor's angular velocity and angular acceleration
 def derivatives(theta, omega, t):
-    field_angle = omega_drive * t
+    slip, induced_emf, current, motor_torque, net_torque = motor_values(omega)
 
-    delta = wrap_angle(field_angle - theta)
-
-    back_emf = k_back * omega
-
-    current = (V - back_emf) / R
-
-    torque = k_t * current * sin(delta)
-
-    alpha = torque / J
+    alpha = net_torque / J
 
     return omega, alpha
 
@@ -259,6 +282,8 @@ def rk4_step(theta, omega, t, dt):
         k1_omega + 2 * k2_omega + 2 * k3_omega + k4_omega
     )
 
+    new_theta = wrap_angle(new_theta)
+
     return new_theta, new_omega
 
 # Updates the visual rotor bar and coil so they rotate together
@@ -273,19 +298,27 @@ def update_rotor_visuals(theta, t):
     coil.pos = -(coil_length / 2) * direction
     coil.axis = coil_length * direction
    
-    ac1 = rmsV*sqrt(2)*sin(t)
-    ac2 = rmsV*sqrt(2)*sin(t+2*pi/3)
-    ac3 = rmsV*sqrt(2)*sin(t+4*pi/3)
+    # Three-phase stator currents create the rotating magnetic field
+    ac1 = rmsI*sqrt(2)*sin(omega_electric*t)
+    ac2 = rmsI*sqrt(2)*sin(omega_electric*t-2*pi/3)
+    ac3 = rmsI*sqrt(2)*sin(omega_electric*t-4*pi/3)
        
     B1 = mu0*ac1*N/l*vector(cos(pi/2), sin(pi/2), 0)
     B2 = mu0*ac2*N/l*vector(cos(pi/2+2*pi/3), sin(pi/2+2*pi/3), 0)
     B3 = mu0*ac3*N/l*vector(cos(pi/2+4*pi/3), sin(pi/2+4*pi/3), 0)
     B = B1+B2+B3
    
-    B1arrow.axis = B1
-    B2arrow.axis = B2
-    B3arrow.axis = B3
-    Barrow.axis = B
+    B1arrow.axis = B1 * B_visual_scale
+    B2arrow.axis = B2 * B_visual_scale
+    B3arrow.axis = B3 * B_visual_scale
+    Barrow.axis = B * B_visual_scale
+    
+    # Rotate the squirrel cage rotor bars with the rotor
+    for i in range(num_bars):
+        angle = i * ((2 * pi) / num_bars) + pi/2 + theta
+        bar_pos = vector(rotor_radius * cos(angle), rotor_radius * sin(angle), 0)
+        rotor_bars[i].pos = bar_pos - vector(0, 0, rotor_length/2)
+        rotor_bars[i].axis = vector(0, 0, rotor_length)
 
 # Main animation loop
 while True:
@@ -293,7 +326,7 @@ while True:
 
     theta, omega = rk4_step(theta, omega, t, dt)
 
-    field_angle = omega_drive * t
+    field_angle = omega_sync * t
 
     stator_radius = 2
     field_arrow_length = 1.8
@@ -301,15 +334,19 @@ while True:
 
     update_rotor_visuals(theta, t)
 
-    back_emf = k_back * omega
-    current = (V - back_emf) / R
-    torque = k_t * current * sin(wrap_angle(omega_drive * t - theta))
+    slip, induced_emf, current, motor_torque, net_torque = motor_values(omega)
 
-    emf_curve.plot(t, back_emf)
-    torque_curve.plot(t, torque)
+    # This gives a sine-wave EMF while still making the amplitude depend on slip
+    instant_emf = induced_emf * sin(wrap_angle(omega_sync * t - theta))
+
+    emf_curve.plot(t, instant_emf)
+    motor_torque_curve.plot(t, motor_torque)
+    net_torque_curve.plot(t, net_torque)
 
     info.text = "Rotor speed: " + str(round(omega, 2)) + " rad/s\n" + \
-                "Back EMF: " + str(round(back_emf, 2)) + " V\n" + \
-                "Current: " + str(round(current, 2)) + " A"
-
+                "Synchronous speed: " + str(round(omega_sync, 2)) + " rad/s\n" + \
+                "Slip: " + str(round(slip * 100, 2)) + "%\n" + \
+                "Instant EMF: " + str(round(instant_emf, 2)) + " V\n" + \
+                "Rotor current: " + str(round(current, 2)) + " A\n" + \
+                "Motor torque: " + str(round(motor_torque, 2)) + " Nm"
     t += dt
