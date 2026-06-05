@@ -236,7 +236,7 @@ def motor_values(omega):
 
     current = induced_emf / rotor_impedance
 
-    motor_torque = k_t * current
+    motor_torque = k_t * current**2 * rotor_R / omega_sync
 
     load_direction = 1 if omega >= 0 else -1
     net_torque = motor_torque - damping * omega - load_torque * load_direction
