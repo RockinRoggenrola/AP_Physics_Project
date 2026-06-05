@@ -212,12 +212,28 @@ def rotor_R_change(evt):
     rotor_R = evt.value
     rotor_R_text.text = 'Rotor Resistance: '+str(rotor_R)
 
+def load_torque_change(evt):
+    global load_torque
+    load_torque = evt.value
+    load_torque_text.text = 'Load Torque: '+str(load_torque)
+
+def damping_change(evt):
+    global load_torque
+    damping = evt.value
+    damping_text.text = 'Damping: '+str(damping)
+
 scene.append_to_caption('\n\n')
 rotor_radius_slider = slider(bind=rotor_radius_change, max=5, min=0.5, step=0.1)
 rotor_radius_text = wtext(text='Rotor Radius: '+str(rotor_radius))
 scene.append_to_caption('\n\n')
 rotor_R_slider = slider(bind=rotor_R_change, max=5, min=0.5, step=0.1)
 rotor_R_text = wtext(text='Rotor Resistance: '+str(rotor_R))
+scene.append_to_caption('\n\n')
+load_torque_slider = slider(bind=load_torque_change, max=5, min=0.5, step=0.1)
+load_torque_text = wtext(text='Load Torque: '+str(load_torque))
+scene.append_to_caption('\n\n')
+damping_slider = slider(bind=damping_change, max=5, min=0.5, step=0.1)
+damping_text = wtext(text='Damping: '+str(damping))
 scene.append_to_caption('\n\n')
 
 # Keeps an angle between -pi and pi
