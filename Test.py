@@ -78,7 +78,7 @@ omega_electric = 2 * pi * frequency
 poles = 2
 omega_sync = 4 * pi * frequency / poles   # Mechanical synchronous speed for the rotating magnetic field
 
-B_visual_scale = 2000   # Makes the magnetic field arrows visible on screen
+B_visual_scale = 1000   # Makes the magnetic field arrows visible on screen
 t = 0
 
 # Three-phase AC currents are 120 degrees apart
@@ -92,8 +92,8 @@ B3 = mu0*ac3*N/l*vector(cos(pi/2+4*pi/3), sin(pi/2+4*pi/3), 0)
 B = B1+B2+B3
 
 B1arrow = arrow(pos=vector(0, 0, 0), axis=B1*B_visual_scale, radius=0.06, color=color.red)
-B2arrow = arrow(pos=vector(0, 0, 0), axis=B2*B_visual_scale, radius=0.06, color=color.blue)
-B3arrow = arrow(pos=vector(0, 0, 0), axis=B3*B_visual_scale, radius=0.06, color=color.green)
+B2arrow = arrow(pos=vector(0, 0, 0), axis=B2*B_visual_scale, radius=0.06, color=color.green)
+B3arrow = arrow(pos=vector(0, 0, 0), axis=B3*B_visual_scale, radius=0.06, color=color.blue)
 Barrow = arrow(pos=vector(0, 0, 0), axis=B*B_visual_scale, radius=0.06, color=color.black)
 
 
@@ -102,25 +102,6 @@ axle = cylinder(pos=vector(0, 0, -0.7),
                 axis=vector(0, 0, 1.4),
                 radius=0.06,
                 color=color.black)
-
-# Rotor bar
-rotor_bar = box(pos=vector(0, 0, 0),
-                size=vector(2.4, 0.18, 0.18),
-                color=color.red)
-
-# Coil/helix on the rotor
-coil = helix(pos=vector(-0.65, 0, 0),
-             axis=vector(1.3, 0, 0),
-             radius=0.22,
-             thickness=0.035,
-             coils=10,
-             color=color.orange)
-
-# Rotating magnetic field arrow
-field_arrow = arrow(pos=vector(0, 0, 0),
-                    axis=vector(1.8, 0, 0),
-                    shaftwidth=0.07,
-                    color=color.blue)
 
 # Power source / battery box
 battery = box(pos=vector(-3, 1.8, 0),
@@ -221,6 +202,24 @@ theta = 0.2
 omega = 0.0
 dt = 0.002
 
+def rotor_radius_change(evt):
+    global rotor_radius
+    rotor_radius = evt.value
+    rotor_radius_text.text = 'Rotor Radius: '+str(rotor_radius)
+
+def rotor_R_change(evt):
+    global rotor_R
+    rotor_R = evt.value
+    rotor_R_text.text = 'Rotor Resistance: '+str(rotor_R)
+
+scene.append_to_caption('\n\n')
+rotor_radius_slider = slider(bind=rotor_radius_change, max=5, min=0.5, step=0.1)
+rotor_radius_text = wtext(text='Rotor Radius: '+str(rotor_radius))
+scene.append_to_caption('\n\n')
+rotor_R_slider = slider(bind=rotor_R_change, max=5, min=0.5, step=0.1)
+rotor_R_text = wtext(text='Rotor Resistance: '+str(rotor_R))
+scene.append_to_caption('\n\n')
+
 # Keeps an angle between -pi and pi
 def wrap_angle(angle):
     return atan2(sin(angle), cos(angle))
@@ -288,16 +287,6 @@ def rk4_step(theta, omega, t, dt):
 
 # Updates the visual rotor bar and coil so they rotate together
 def update_rotor_visuals(theta, t):
-    direction = vector(cos(theta), sin(theta), 0)
-
-    rotor_length = 2.4
-    rotor_bar.axis = rotor_length * direction
-    rotor_bar.up = vector(-sin(theta), cos(theta), 0)
-
-    coil_length = 1.3
-    coil.pos = -(coil_length / 2) * direction
-    coil.axis = coil_length * direction
-   
     # Three-phase stator currents create the rotating magnetic field
     ac1 = rmsI*sqrt(2)*sin(omega_electric*t)
     ac2 = rmsI*sqrt(2)*sin(omega_electric*t-2*pi/3)
@@ -312,6 +301,9 @@ def update_rotor_visuals(theta, t):
     B2arrow.axis = B2 * B_visual_scale
     B3arrow.axis = B3 * B_visual_scale
     Barrow.axis = B * B_visual_scale
+    
+    end_ring_left.radius = rotor_radius
+    end_ring_right.radius = rotor_radius
     
     # Rotate the squirrel cage rotor bars with the rotor
     for i in range(num_bars):
@@ -329,8 +321,6 @@ while True:
     field_angle = omega_sync * t
 
     stator_radius = 2
-    field_arrow_length = 1.8
-    field_arrow.axis = field_arrow_length * vector(cos(field_angle), sin(field_angle), 0)
 
     update_rotor_visuals(theta, t)
 
