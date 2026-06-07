@@ -1,9 +1,12 @@
+from vpython import *
+from math import sin, cos, pi, atan2, sqrt
 # Ring for stator
 # Helix for coil
 # Box for battery / power source
 
-from vpython import *
-from math import sin, cos, pi, atan2, sqrt
+# This version is written for GlowScript Web VPython 3.2.
+# Do not add: from vpython import *
+# Paste the whole file into glowscript.org or Web VPython.
 
 # Setup
 scene = canvas(title="AC Induction Motor Simulation",
@@ -64,20 +67,21 @@ dt = 0.003
 plot_counter = 0
 graph_window = 12.0
 
-# Graph curve placeholders
-ia_curve = None
-ib_curve = None
-ic_curve = None
-speed_curve = None
-sync_curve = None
-emf_curve = None
-motor_torque_curve = None
-resist_torque_curve = None
-net_torque_curve = None
-
 # Display flags
 live_visible = False
 constants_visible = False
+
+# Graph curve holders
+graph_curves = []
+ia_curve = 0
+ib_curve = 0
+ic_curve = 0
+speed_curve = 0
+sync_curve = 0
+emf_curve = 0
+motor_torque_curve = 0
+resist_torque_curve = 0
+net_torque_curve = 0
 
 # Helper functions
 def wrap_angle(angle):
@@ -121,24 +125,31 @@ def zoom_out():
 def toggle_run():
     global running
     running = not running
-    run_button.text = "Pause" if running else "Run"
+    if running:
+        run_button.text = "Pause"
+    else:
+        run_button.text = "Run"
 
 
 def toggle_live_values():
     global live_visible
     live_visible = not live_visible
-    live_button.text = "Hide Live Values" if live_visible else "Show Live Values"
-    if not live_visible:
+    if live_visible:
+        live_button.text = "Hide Live Values"
+        live_text.text = live_values_string()
+    else:
+        live_button.text = "Show Live Values"
         live_text.text = ""
 
 
 def toggle_constants():
     global constants_visible
     constants_visible = not constants_visible
-    constants_button.text = "Hide Constants" if constants_visible else "Show Constants"
     if constants_visible:
+        constants_button.text = "Hide Constants"
         constants_text.text = constants_string()
     else:
+        constants_button.text = "Show Constants"
         constants_text.text = ""
 
 
@@ -316,7 +327,11 @@ def motor_values(local_omega):
     rotor_emf_peak = rotor_emf_rms*sqrt(2)
     rotor_reactance = rotor_X_locked*slip_abs
     rotor_impedance = sqrt(rotor_R**2 + rotor_reactance**2)
-    rotor_current = rotor_emf_rms/rotor_impedance if rotor_impedance > 0 else 0
+
+    if rotor_impedance > 0:
+        rotor_current = rotor_emf_rms/rotor_impedance
+    else:
+        rotor_current = 0
 
     # Simplified induction motor torque relation.
     # It rises from zero, then falls toward zero as slip approaches zero.
@@ -324,13 +339,19 @@ def motor_values(local_omega):
     if torque_denominator == 0 or slip_abs < 0.00001:
         motor_torque = 0
     else:
-        motor_torque = torque_direction*k_torque*(standstill_rotor_emf**2)*rotor_R*slip_abs/(omega_sync*torque_denominator)
-
+        torque_magnitude = k_torque*(standstill_rotor_emf**2)*rotor_R*slip_abs/(omega_sync*torque_denominator)
+        if slip_for_calc >= 0:
+            motor_torque = torque_magnitude
+        else:
+            motor_torque = -torque_magnitude
     friction = damping*local_omega
     if abs(local_omega) < 0.015 and abs(motor_torque) <= load_torque:
         load = motor_torque
     else:
-        load = load_torque*(1 if local_omega >= 0 else -1)
+        if local_omega >= 0:
+            load = load_torque
+        else:
+            load = -load_torque
 
     resisting_torque = load + friction
     net_torque = motor_torque - resisting_torque
@@ -394,7 +415,10 @@ def update_rotor_visuals():
         induced_direction = sin(wrap_angle(field_angle - angle))
         bar_current_arrows[i].pos = bar_pos - vector(0, 0, 0.18)
         bar_current_arrows[i].axis = vector(0, 0, current_scale*induced_direction)
-        bar_current_arrows[i].color = color.cyan if induced_direction >= 0 else color.magenta
+        if induced_direction >= 0:
+            bar_current_arrows[i].color = color.cyan
+        else:
+            bar_current_arrows[i].color = color.magenta
 
     rotor_marker.pos = vector(rotor_radius*cos(theta), rotor_radius*sin(theta), 0.76)
 
@@ -405,7 +429,10 @@ def live_values_string():
     slip, rotor_emf_rms, rotor_emf_peak, rotor_current, motor_torque, resisting_torque, net_torque = motor_values(omega)
     instant_emf = rotor_emf_peak*sin(wrap_angle(atan2(B.y, B.x) - theta))
 
-    status = "Running" if running else "Paused"
+    if running:
+        status = "Running"
+    else:
+        status = "Paused"
     if abs(omega) < 0.02 and abs(motor_torque) <= load_torque:
         status = status + " / stalled by load"
 
@@ -423,21 +450,9 @@ def live_values_string():
 
 
 # Graph functions
-def hide_curve(curve_object):
-    if curve_object is None:
-        return
-    try:
-        curve_object.delete()
-    except Exception:
-        try:
-            curve_object.visible = False
-        except Exception:
-            pass
-
-
 def create_graph_curves():
     global ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve
-    global motor_torque_curve, resist_torque_curve, net_torque_curve
+    global motor_torque_curve, resist_torque_curve, net_torque_curve, graph_curves
 
     ia_curve = gcurve(graph=current_graph, color=color.red)
     ib_curve = gcurve(graph=current_graph, color=color.green)
@@ -452,23 +467,25 @@ def create_graph_curves():
     resist_torque_curve = gcurve(graph=torque_graph, color=color.red)
     net_torque_curve = gcurve(graph=torque_graph, color=color.orange)
 
+    graph_curves = [ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve,
+                    motor_torque_curve, resist_torque_curve, net_torque_curve]
+
 
 def reset_graphs():
-    # Fresh traces make reset behave like a page reload without creating new graph panels.
-    global ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve
-    global motor_torque_curve, resist_torque_curve, net_torque_curve
+    # Delete old traces and make new ones, like refreshing the page.
+    global graph_curves
 
-    for curve_object in [ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve,
-                         motor_torque_curve, resist_torque_curve, net_torque_curve]:
-        hide_curve(curve_object)
+    for curve_object in graph_curves:
+        curve_object.delete()
 
-    # Return graph windows to the beginning so reset does not plot off-screen.
-    for graph_object in [current_graph, speed_graph, emf_graph, torque_graph]:
-        try:
-            graph_object.xmin = 0
-            graph_object.xmax = graph_window
-        except Exception:
-            pass
+    current_graph.xmin = 0
+    current_graph.xmax = graph_window
+    speed_graph.xmin = 0
+    speed_graph.xmax = graph_window
+    emf_graph.xmin = 0
+    emf_graph.xmax = graph_window
+    torque_graph.xmin = 0
+    torque_graph.xmax = graph_window
 
     create_graph_curves()
 
@@ -479,17 +496,15 @@ def plot_graphs():
     omega_electric, omega_sync = update_speeds()
     instant_emf = rotor_emf_peak*sin(wrap_angle(atan2(B.y, B.x) - theta))
 
-    # x time starts at zero again after reset.
-    graph_time = t
-    ia_curve.plot(graph_time, ia)
-    ib_curve.plot(graph_time, ib)
-    ic_curve.plot(graph_time, ic)
-    speed_curve.plot(graph_time, omega)
-    sync_curve.plot(graph_time, omega_sync)
-    emf_curve.plot(graph_time, instant_emf)
-    motor_torque_curve.plot(graph_time, motor_torque)
-    resist_torque_curve.plot(graph_time, resisting_torque)
-    net_torque_curve.plot(graph_time, net_torque)
+    ia_curve.plot(t, ia)
+    ib_curve.plot(t, ib)
+    ic_curve.plot(t, ic)
+    speed_curve.plot(t, omega)
+    sync_curve.plot(t, omega_sync)
+    emf_curve.plot(t, instant_emf)
+    motor_torque_curve.plot(t, motor_torque)
+    resist_torque_curve.plot(t, resisting_torque)
+    net_torque_curve.plot(t, net_torque)
 
 
 # Slider callback functions
