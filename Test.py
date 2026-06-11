@@ -655,10 +655,6 @@ scene.append_to_caption("\nRotor visual size: ")
 rotor_radius_slider = slider(bind=rotor_radius_change, min=0.55, max=1.15, value=rotor_radius, step=0.05, length=300)
 rotor_radius_text = wtext(text=str(round(rotor_radius, 2)))
 
-scene.append_to_caption("\nAnimation speed:   ")
-animation_speed_slider = slider(bind=animation_speed_change, min=15, max=50, value=animation_steps, step=1, length=300)
-animation_speed_text = wtext(text=str(animation_steps) + "x")
-
 scene.append_to_caption("\n\nManual\n")
 scene.append_to_caption("Drag to rotate. Shift-drag to pan. Scroll to zoom. Reset View only resets the camera. Reset restarts the whole simulation.\n")
 scene.append_to_caption("Black arrow = net rotating magnetic field. Red/green/blue arrows = phase fields. Orange cage = rotor. Cyan/magenta arrows = induced rotor currents.\n")
