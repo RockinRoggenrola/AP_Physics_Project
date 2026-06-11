@@ -36,7 +36,7 @@ load_torque_default = 0.015
 damping_default = 0.0030
 J_default = 0.080
 rotor_radius_default = 0.90
-animation_steps_default = 8
+animation_steps_default = 15
 
 # Motor settings
 voltage_rms = voltage_rms_default
@@ -63,7 +63,7 @@ B_visual_scale = 900
 t = 0.0
 theta = 0.2
 omega = 0.0
-dt = 0.006
+dt = 0.001
 plot_counter = 0
 graph_window = 12.0
 
@@ -656,7 +656,7 @@ rotor_radius_slider = slider(bind=rotor_radius_change, min=0.55, max=1.15, value
 rotor_radius_text = wtext(text=str(round(rotor_radius, 2)))
 
 scene.append_to_caption("\nAnimation speed:   ")
-animation_speed_slider = slider(bind=animation_speed_change, min=8, max=20, value=animation_steps, step=1, length=300)
+animation_speed_slider = slider(bind=animation_speed_change, min=15, max=50, value=animation_steps, step=1, length=300)
 animation_speed_text = wtext(text=str(animation_steps) + "x")
 
 scene.append_to_caption("\n\nManual\n")
@@ -673,6 +673,12 @@ live_text = wtext(text="")
 constants_text = wtext(text="")
 
 scene.append_to_caption("\nGraphs\n")
+
+scene.append_to_caption("\nGraph Color Key\n")
+scene.append_to_caption("Three-phase stator currents: Red = Phase A, Green = Phase B, Blue = Phase C\n")
+scene.append_to_caption("Rotor speed graph: Orange = rotor speed, Black = synchronous speed\n")
+scene.append_to_caption("Instantaneous rotor EMF graph: Red = rotor EMF\n")
+scene.append_to_caption("Torque balance graph: Blue = motor torque, Red = resisting torque, Orange = net torque\n")
 
 # Graphs are created after the controls so they stay below the simulation area.
 current_graph = graph(title="Three-phase stator currents",
