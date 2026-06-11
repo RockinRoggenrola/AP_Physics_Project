@@ -32,11 +32,11 @@ running = True
 voltage_rms_default = 10.0
 frequency_default = 0.80
 rotor_R_default = 0.80
-load_torque_default = 0.040
+load_torque_default = 0.015
 damping_default = 0.0030
 J_default = 0.080
 rotor_radius_default = 0.90
-animation_steps_default = 3
+animation_steps_default = 8
 
 # Motor settings
 voltage_rms = voltage_rms_default
@@ -63,7 +63,7 @@ B_visual_scale = 900
 t = 0.0
 theta = 0.2
 omega = 0.0
-dt = 0.003
+dt = 0.006
 plot_counter = 0
 graph_window = 12.0
 
@@ -293,7 +293,11 @@ end_ring_right = ring(pos=vector(0, 0, rotor_length/2),
                       radius=rotor_radius,
                       thickness=0.06,
                       color=color.orange)
-rotor_marker = sphere(pos=vector(rotor_radius, 0, 0.76), radius=0.08, color=color.white)
+# Small rotor spoke so the squirrel cage visibly spins
+rotor_spoke = cylinder(pos=vector(0, 0, 0.76),
+                       axis=vector(rotor_radius, 0, 0),
+                       radius=0.025,
+                       color=color.orange)
 
 # Physics functions
 def stator_field_values(local_time):
@@ -344,20 +348,21 @@ def motor_values(local_omega):
             motor_torque = torque_magnitude
         else:
             motor_torque = -torque_magnitude
+    
     friction = damping*local_omega
-    if abs(local_omega) < 0.015 and abs(motor_torque) <= load_torque:
-        load = motor_torque
-    else:
-        if local_omega >= 0:
-            load = load_torque
-        else:
-            load = -load_torque
+
+    # Smooth load torque.
+    # This prevents the load from acting like a hard brake at exactly zero speed.
+    # As the rotor starts moving, the load gradually increases toward the slider value.
+    load_smoothing = 0.35
+    load_direction = local_omega/sqrt(local_omega*local_omega + load_smoothing*load_smoothing)
+
+    load = load_torque*load_direction
 
     resisting_torque = load + friction
     net_torque = motor_torque - resisting_torque
     return slip, rotor_emf_rms, rotor_emf_peak, rotor_current, motor_torque, resisting_torque, net_torque
-
-
+    
 def derivatives(local_theta, local_omega, local_time):
     slip, rotor_emf_rms, rotor_emf_peak, rotor_current, motor_torque, resisting_torque, net_torque = motor_values(local_omega)
     alpha = net_torque/J
@@ -420,7 +425,8 @@ def update_rotor_visuals():
         else:
             bar_current_arrows[i].color = color.magenta
 
-    rotor_marker.pos = vector(rotor_radius*cos(theta), rotor_radius*sin(theta), 0.76)
+    rotor_spoke.pos = vector(0, 0, 0.76)
+    rotor_spoke.axis = vector(rotor_radius*cos(theta), rotor_radius*sin(theta), 0)
 
 
 def live_values_string():
@@ -634,7 +640,7 @@ rotor_R_slider = slider(bind=rotor_R_change, min=0.2, max=2.5, value=rotor_R, st
 rotor_R_text = wtext(text=str(round(rotor_R, 2)) + " ohm")
 
 scene.append_to_caption("\nLoad torque:       ")
-load_slider = slider(bind=load_torque_change, min=0.0, max=0.25, value=load_torque, step=0.005, length=300)
+load_slider = slider(bind=load_torque_change, min=0.0, max=0.06, value=load_torque, step=0.002, length=300)
 load_text = wtext(text=str(round(load_torque, 3)) + " Nm")
 
 scene.append_to_caption("\nFriction:          ")
@@ -650,7 +656,7 @@ rotor_radius_slider = slider(bind=rotor_radius_change, min=0.55, max=1.15, value
 rotor_radius_text = wtext(text=str(round(rotor_radius, 2)))
 
 scene.append_to_caption("\nAnimation speed:   ")
-animation_speed_slider = slider(bind=animation_speed_change, min=1, max=8, value=animation_steps, step=1, length=300)
+animation_speed_slider = slider(bind=animation_speed_change, min=8, max=20, value=animation_steps, step=1, length=300)
 animation_speed_text = wtext(text=str(animation_steps) + "x")
 
 scene.append_to_caption("\n\nManual\n")
