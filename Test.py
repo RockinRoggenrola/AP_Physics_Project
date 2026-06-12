@@ -478,11 +478,26 @@ def create_graph_curves():
 
 
 def reset_graphs():
-    # Delete old traces and make new ones, like refreshing the page.
+    # Fully clear old graph traces and restart graph time from 0.
     global graph_curves
+    global ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve
+    global motor_torque_curve, resist_torque_curve, net_torque_curve
 
     for curve_object in graph_curves:
-        curve_object.delete()
+        if curve_object != 0:
+            curve_object.delete()
+
+    graph_curves = []
+
+    ia_curve = 0
+    ib_curve = 0
+    ic_curve = 0
+    speed_curve = 0
+    sync_curve = 0
+    emf_curve = 0
+    motor_torque_curve = 0
+    resist_torque_curve = 0
+    net_torque_curve = 0
 
     current_graph.xmin = 0
     current_graph.xmax = graph_window
@@ -611,6 +626,7 @@ def reset_simulation():
     reset_view()
     reset_graphs()
     update_rotor_visuals()
+    plot_counter = 0
     plot_graphs()
 
 
