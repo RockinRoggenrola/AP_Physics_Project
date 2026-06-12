@@ -4,10 +4,6 @@ from math import sin, cos, pi, atan2, sqrt
 # Helix for coil
 # Box for battery / power source
 
-# This version is written for GlowScript Web VPython 3.2.
-# Do not add: from vpython import *
-# Paste the whole file into glowscript.org or Web VPython.
-
 # Setup
 scene = canvas(title="AC Induction Motor Simulation",
                width=900,
