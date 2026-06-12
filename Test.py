@@ -608,7 +608,6 @@ def reset_simulation():
     damping_slider.value = damping
     inertia_slider.value = J
     rotor_radius_slider.value = rotor_radius
-    animation_speed_slider.value = animation_steps
 
     voltage_text.text = str(round(voltage_rms, 1)) + " V"
     frequency_text.text = str(round(frequency, 2)) + " Hz"
@@ -617,7 +616,6 @@ def reset_simulation():
     damping_text.text = str(round(damping, 4))
     inertia_text.text = str(round(J, 3)) + " kg m^2"
     rotor_radius_text.text = str(round(rotor_radius, 2))
-    animation_speed_text.text = str(animation_steps) + "x"
 
     live_visible = False
     constants_visible = False
