@@ -82,6 +82,11 @@ emf_curve = 0
 motor_torque_curve = 0
 resist_torque_curve = 0
 net_torque_curve = 0
+# Graph object holders
+current_graph = 0
+speed_graph = 0
+emf_graph = 0
+torque_graph = 0
 
 # Helper functions
 def wrap_angle(angle):
@@ -478,8 +483,9 @@ def create_graph_curves():
 
 
 def reset_graphs():
-    # Fully clear old graph traces and restart graph time from 0.
+    # Fully delete old graph curves and graph boxes, then rebuild them from zero.
     global graph_curves
+    global current_graph, speed_graph, emf_graph, torque_graph
     global ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve
     global motor_torque_curve, resist_torque_curve, net_torque_curve
 
@@ -488,6 +494,15 @@ def reset_graphs():
             curve_object.delete()
 
     graph_curves = []
+
+    if current_graph != 0:
+        current_graph.delete()
+    if speed_graph != 0:
+        speed_graph.delete()
+    if emf_graph != 0:
+        emf_graph.delete()
+    if torque_graph != 0:
+        torque_graph.delete()
 
     ia_curve = 0
     ib_curve = 0
@@ -499,15 +514,7 @@ def reset_graphs():
     resist_torque_curve = 0
     net_torque_curve = 0
 
-    current_graph.xmin = 0
-    current_graph.xmax = graph_window
-    speed_graph.xmin = 0
-    speed_graph.xmax = graph_window
-    emf_graph.xmin = 0
-    emf_graph.xmax = graph_window
-    torque_graph.xmin = 0
-    torque_graph.xmax = graph_window
-
+    create_graph_objects()
     create_graph_curves()
 
 
@@ -693,42 +700,45 @@ scene.append_to_caption("Instantaneous rotor EMF graph: Red = rotor EMF\n")
 scene.append_to_caption("Torque balance graph: Blue = motor torque, Red = resisting torque, Orange = net torque\n")
 
 # Graphs are created after the controls so they stay below the simulation area.
-current_graph = graph(title="Three-phase stator currents",
+def create_graph_objects():
+    global current_graph, speed_graph, emf_graph, torque_graph
+
+    current_graph = graph(title="Three-phase stator currents",
+                          xtitle="Time (s)",
+                          ytitle="Current (A)",
+                          width=900,
+                          height=210,
+                          xmin=0,
+                          xmax=graph_window,
+                          scroll=True)
+
+    speed_graph = graph(title="Rotor speed and synchronous speed",
+                        xtitle="Time (s)",
+                        ytitle="Speed (rad/s)",
+                        width=900,
+                        height=210,
+                        xmin=0,
+                        xmax=graph_window,
+                        scroll=True)
+
+    emf_graph = graph(title="Instantaneous rotor EMF",
                       xtitle="Time (s)",
-                      ytitle="Current (A)",
+                      ytitle="EMF (V)",
                       width=900,
                       height=210,
                       xmin=0,
                       xmax=graph_window,
                       scroll=True)
 
-speed_graph = graph(title="Rotor speed and synchronous speed",
-                    xtitle="Time (s)",
-                    ytitle="Speed (rad/s)",
-                    width=900,
-                    height=210,
-                    xmin=0,
-                    xmax=graph_window,
-                    scroll=True)
-
-emf_graph = graph(title="Instantaneous rotor EMF",
-                  xtitle="Time (s)",
-                  ytitle="EMF (V)",
-                  width=900,
-                  height=210,
-                  xmin=0,
-                  xmax=graph_window,
-                  scroll=True)
-
-torque_graph = graph(title="Torque balance",
-                     xtitle="Time (s)",
-                     ytitle="Torque (Nm)",
-                     width=900,
-                     height=210,
-                     xmin=0,
-                     xmax=graph_window,
-                     scroll=True)
-
+    torque_graph = graph(title="Torque balance",
+                         xtitle="Time (s)",
+                         ytitle="Torque (Nm)",
+                         width=900,
+                         height=210,
+                         xmin=0,
+                         xmax=graph_window,
+                         scroll=True)
+create_graph_objects()
 create_graph_curves()
 update_rotor_visuals()
 plot_graphs()
