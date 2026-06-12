@@ -674,7 +674,7 @@ rotor_radius_text = wtext(text=str(round(rotor_radius, 2)))
 
 scene.append_to_caption("\n\nManual\n")
 scene.append_to_caption("Drag to rotate. Shift-drag to pan. Scroll to zoom. Reset View only resets the camera. Reset restarts the whole simulation.\n")
-scene.append_to_caption("Black arrow = net rotating magnetic field. Red/green/blue arrows = phase fields. Orange cage = rotor.\n")
+scene.append_to_caption("Black arrow = net rotating magnetic field. Red/green/blue arrows = phase fields. Orange cage = rotor. Cyan/magenta dots = induced rotor currents.\n")
 scene.append_to_caption("Raise load torque to make the motor slow down or stall. Raise frequency to increase synchronous speed.\n")
 
 scene.append_to_caption("\n")
