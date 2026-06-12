@@ -483,9 +483,8 @@ def create_graph_curves():
 
 
 def reset_graphs():
-    # Fully delete old graph curves and graph boxes, then rebuild them from zero.
+    # Clear all plotted graph data and restart the graph windows.
     global graph_curves
-    global current_graph, speed_graph, emf_graph, torque_graph
     global ia_curve, ib_curve, ic_curve, speed_curve, sync_curve, emf_curve
     global motor_torque_curve, resist_torque_curve, net_torque_curve
 
@@ -494,15 +493,6 @@ def reset_graphs():
             curve_object.delete()
 
     graph_curves = []
-
-    if current_graph != 0:
-        current_graph.delete()
-    if speed_graph != 0:
-        speed_graph.delete()
-    if emf_graph != 0:
-        emf_graph.delete()
-    if torque_graph != 0:
-        torque_graph.delete()
 
     ia_curve = 0
     ib_curve = 0
@@ -514,7 +504,18 @@ def reset_graphs():
     resist_torque_curve = 0
     net_torque_curve = 0
 
-    create_graph_objects()
+    current_graph.xmin = 0
+    current_graph.xmax = graph_window
+
+    speed_graph.xmin = 0
+    speed_graph.xmax = graph_window
+
+    emf_graph.xmin = 0
+    emf_graph.xmax = graph_window
+
+    torque_graph.xmin = 0
+    torque_graph.xmax = graph_window
+
     create_graph_curves()
 
 
@@ -633,9 +634,6 @@ def reset_simulation():
     reset_view()
     reset_graphs()
     update_rotor_visuals()
-    plot_counter = 0
-    plot_graphs()
-
 
 # Controls and instructions
 scene.append_to_caption("\nControls\n")
